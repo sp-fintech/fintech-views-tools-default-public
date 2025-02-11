@@ -5,7 +5,7 @@
 	"module_type" : "views",
 	"app_type" : "fintech",
 	"category" : "tools",
-	"version" : "0.0.0",
+	"version" : "0.3.0",
 	"repo" : "https://github.com/sp-fintech/fintech-views-tools-default-public",
 	"dependencies" : 
 	{
@@ -37,13 +37,13 @@
 				"view" : "default",
 				"name" : "Default"
 			},
-
+			
 			{
 				"view" : "topnav",
 				"name" : "Top Navigation",
 				"active" : true
 			},
-
+			
 			{
 				"view" : "topnavsidebar",
 				"name" : "Top Navigation With Sidebar"
@@ -57,7 +57,7 @@
 				"maxWidth" : 35,
 				"maxHeight" : 30
 			},
-
+			
 			{
 				"brand" : "baz/logo/fulllogo168x30.png",
 				"maxWidth" : 200,
@@ -88,7 +88,7 @@
 								"local" : true,
 								"asset" : "fintech/default/css/plugins.css"
 							},
-
+							
 							{
 								"local" : true,
 								"asset" : "fintech/default/css/core.css"
@@ -109,12 +109,12 @@
 								"local" : true,
 								"asset" : "fintech/default/js/header/jsHeaderDependencies.js"
 							},
-
+							
 							{
 								"local" : true,
 								"asset" : "fintech/default/js/header/jsHeaderCore.js"
 							},
-
+							
 							{
 								"local" : true,
 								"asset" : "fintech/default/js/header/jsHeaderPlugins.js"
