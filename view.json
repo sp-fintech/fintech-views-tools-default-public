@@ -4,8 +4,8 @@
 	"description" : "<p>Default Fintech View</p>",
 	"module_type" : "views",
 	"app_type" : "fintech",
-	"category" : "default",
-	"version" : "0.10.0",
+	"category" : "tools",
+	"version" : "0.11.0",
 	"repo" : "https://github.com/sp-fintech/fintech-views-tools-default-public",
 	"dependencies" : 
 	{
@@ -15,23 +15,20 @@
 			"version" : "0.0.0-rc.8",
 			"repo" : "https://github.com/sp-framework/core"
 		},
-		"components" : [],
-		"packages" : 
-		[
-			{
-				"name" : "Adminltetags",
-				"version" : "0.3.0",
-				"repo" : "https://github.com/sp-fintech/fintech-packages-viewtags-adminltetags"
-			}
-		],
-		"middlewares" : [],
-		"views" : [],
 		"apptype" : 
 		{
 			"name" : "Fintech",
 			"version" : "0.3.0",
 			"repo" : "https://github.com/sp-fintech/fintech"
-		}
+		},
+		"packages" : 
+		[
+			{
+				"name" : "Adminltetags",
+				"version" : "0.4.0",
+				"repo" : "https://github.com/sp-fintech/fintech-packages-viewtags-adminltetags"
+			}
+		]
 	},
 	"is_subview" : false,
 	"settings" : 
