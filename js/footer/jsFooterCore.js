@@ -11845,7 +11845,7 @@ var BazProgress = function() {
     var initialized = false;
     var progressCounter = 0;
     var online = false;
-    var element, manualShowHide, hasChild, hasRemoteWeb;
+    var element, manualShowHide, hasChild, hasSubProcess, hasCancelButton;
     var callableFunc = null;
     var dataCollection = window.dataCollection;
     var url
@@ -11855,8 +11855,11 @@ var BazProgress = function() {
     var downloadedBytes = 0;
     var uploadTotal = 0;
     var uploadedBytes = 0;
+    var stepsTotal = 0;
+    var stepsCurrent = 0;
     var isUpload = false;
     var isDownload = false;
+    var isSteps = false;
     // Error
     // function error(errorMsg) {
     //     throw new Error(errorMsg);
@@ -11891,11 +11894,12 @@ var BazProgress = function() {
         console.log('Progress service offline');
     }
 
-    function buildProgressBar(el, mSH = false, hC = false, hRW = false) {
+    function buildProgressBar(el, mSH = false, hC = false, hSP = false, hCB = true) {
         element = el;
         manualShowHide = mSH;
         hasChild = hC;
-        hasRemoteWeb = hRW;
+        hasSubProcess = hSP;
+        hasCancelButton = hCB;
 
         $(element).html(
             '<div class="progress active progress-xs">' +
@@ -11923,7 +11927,7 @@ var BazProgress = function() {
             );
         }
 
-        if (hasRemoteWeb) {
+        if (hasSubProcess) {
             $(element).append(
                 '<div class="progress progress-remote active progress-xxs" hidden>' +
                     '<div class="progress-bar progress-xxs bg-primary progress-bar-animated progress-bar-striped ' + $(element)[0].id + '-remote-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="width: 0%"></div>' +
@@ -11933,6 +11937,16 @@ var BazProgress = function() {
                         '<span class="sr-only ' + $(element)[0].id + '-remote-progress-span"></span>' +
                         '<span class="' + $(element)[0].id + '-remote-progress-span"></span>' +
                     '</div>' +
+                '</div>'
+            );
+        }
+
+        if (hasCancelButton) {
+            $(element).append(
+                '<div class="text-center mt-3" id="' + $(element)[0].id + '-cancel" hidden>' +
+                    '<button class="btn btn-sm btn-secondary mr-1" id="' + $(element)[0].id + '-cancel-button" role="button">' +
+                        'Cancel' +
+                    '</button>' +
                 '</div>'
             );
         }
@@ -11991,6 +12005,10 @@ var BazProgress = function() {
                     responseData = response.responseData;
                 }
 
+                if (responseData['pid']) {
+                    $('#' + $(element)[0].id + '-cancel').attr('hidden', false);
+                }
+
                 if (responseData['preCheckComplete'] == false ||
                     (responseData['callResult'] && responseData['callResult'] === 'reset')
                 ) {
@@ -12013,8 +12031,10 @@ var BazProgress = function() {
                                 $('.child-progress-span').attr('hidden', false);
 
                                 if (responseData['runners']['running'] &&
-                                    responseData['runners']['running']['remoteWeb'] &&
-                                    responseData['runners']['running']['remoteWebCounters']
+                                    (responseData['runners']['running']['remoteWeb'] &&
+                                     responseData['runners']['running']['remoteWebCounters']) ||
+                                    (responseData['runners']['running']['steps'] &&
+                                     responseData['runners']['running']['stepsCounters'])
                                 ) {
                                     $('#' + $(element)[0].id + ' .progress-remote').attr('hidden', false);
                                     $('.remote-progress-span').attr('hidden', false);
@@ -12041,10 +12061,14 @@ var BazProgress = function() {
                                 switchProgressBarColor('.' + $(element)[0].id + '-child-bar', 'info');
 
                                 if (responseData['runners']['running'] &&
-                                    responseData['runners']['running']['remoteWeb'] &&
-                                    responseData['runners']['running']['remoteWebCounters']
+                                    (responseData['runners']['running']['remoteWeb'] &&
+                                     responseData['runners']['running']['remoteWebCounters']) ||
+                                    (responseData['runners']['running']['steps'] &&
+                                     responseData['runners']['running']['stepsCounters'])
                                 ) {
-                                    if (responseData['runners']['running']['remoteWebCounters']) {
+                                    if (responseData['runners']['running']['remoteWebCounters'] ||
+                                        responseData['runners']['running']['stepsCounters']
+                                    ) {
                                         $('#' + $(element)[0].id + ' .progress-remote').attr('hidden', false);
                                         $('.remote-progress-span').attr('hidden', false);
 
@@ -12118,8 +12142,11 @@ var BazProgress = function() {
                             downloadedBytes = 0;
                             uploadTotal = 0;
                             uploadedBytes = 0;
+                            stepsTotal = 0;
+                            stepsCurrent = 0;
                             isUpload = false;
                             isDownload = false;
+                            isSteps = false;
                             $('.' + $(element)[0].id + '-child-bar').css('width', '0%');
                             $('.' + $(element)[0].id + '-child-bar').attr('aria-valuenow', 0);
                             switchProgressBarColor('.' + $(element)[0].id + '-child-bar', 'info');
@@ -12177,13 +12204,23 @@ var BazProgress = function() {
                 uploadTotal = responseData['runners']['running']['remoteWebCounters']['uploadTotal'];
                 uploadedBytes = responseData['runners']['running']['remoteWebCounters']['uploadedBytes'];
             }
+        } else if (responseData['runners']['running']['stepsCounters']) {
+            if (responseData['runners']['running']['stepsCounters']['stepsTotal'] &&
+                responseData['runners']['running']['stepsCounters']['stepsTotal'] > 0
+            ) {
+                isSteps = true;
+                stepsTotal = responseData['runners']['running']['stepsCounters']['stepsTotal'];
+                stepsCurrent = responseData['runners']['running']['stepsCounters']['stepsCurrent'];
+            }
         }
 
-        if (isDownload || isUpload) {
+        if (isDownload || isUpload || isSteps) {
             if (isDownload) {
                 text = responseData['runners']['running']['text'] + ' (' + responseData['percentComplete'] + '% | ' + downloadedBytes + '/' + downloadTotal + ' bytes)';
             } else if (isUpload) {
                 text = responseData['runners']['running']['text'] + ' (' + responseData['percentComplete'] + '% | ' + uploadedBytes + '/' + uploadTotal + ' bytes)';
+            } else if (isSteps) {
+                text = responseData['runners']['running']['text'] + ' (' + responseData['percentComplete'] + '% | ' + stepsCurrent + '/' + stepsTotal + ' steps)';
             }
         }
 
@@ -12210,8 +12247,11 @@ var BazProgress = function() {
         downloadedBytes = 0;
         uploadTotal = 0;
         uploadedBytes = 0;
+        stepsTotal = 0;
+        stepsCurrent = 0;
         isUpload = false;
         isDownload = false;
+        isSteps = false;
         $('body').trigger({'type':'bazProgressComplete', 'reset' : true});
     }
 
@@ -12250,8 +12290,8 @@ var BazProgress = function() {
                 getProgress(options);
             }
         }
-        BazProgress.buildProgressBar = function(el, mSH = false, child = false, remoteWeb = false) {
-            buildProgressBar(el, mSH, child, remoteWeb);
+        BazProgress.buildProgressBar = function(el, mSH = false, child = false, hasSubProcess = false, hasCancelButton = true) {
+            buildProgressBar(el, mSH, child, hasSubProcess, hasCancelButton);
         }
         BazProgress.switchProgressBarColor = function(el, color) {
             switchProgressBarColor(el, color);
