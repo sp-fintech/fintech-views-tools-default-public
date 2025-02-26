@@ -11826,7 +11826,7 @@ var BazAnnouncements = function() {
     return bazAnnouncementsConstructor;
 }();
 /* exported BazProgress */
-/* globals BazHelpers */
+/* globals BazHelpers paginatedPNotify Swal dataCollection */
 /*
 * @title                    : BazProgress
 * @description              : Baz Progress Lib
@@ -11847,7 +11847,6 @@ var BazProgress = function() {
     var online = false;
     var element, manualShowHide, hasChild, hasSubProcess, hasCancelButton;
     var callableFunc = null;
-    var dataCollection = window.dataCollection;
     var url
     var postData = { };
     var progressOptions;
@@ -11860,6 +11859,8 @@ var BazProgress = function() {
     var isUpload = false;
     var isDownload = false;
     var isSteps = false;
+    var pid = 0;
+    var progressFile = null;
     // Error
     // function error(errorMsg) {
     //     throw new Error(errorMsg);
@@ -11949,6 +11950,59 @@ var BazProgress = function() {
                     '</button>' +
                 '</div>'
             );
+
+            $('#' + $(element)[0].id + '-cancel').off();
+            $('#' + $(element)[0].id + '-cancel').click(function() {
+                if (pid > 0) {
+                    Swal.fire({
+                        title                       : '<span class="text-danger"> Cancel current process?</span>',
+                        icon                        : 'question',
+                        background                  : 'rgba(0,0,0,.8)',
+                        backdrop                    : 'rgba(0,0,0,.6)',
+                        buttonsStyling              : false,
+                        confirmButtonText           : 'Yes',
+                        customClass                 : {
+                            'confirmButton'             : 'btn btn-danger btn-sm text-uppercase',
+                            'cancelButton'              : 'ml-2 btn btn-secondary btn-sm text-uppercase',
+                        },
+                        showCancelButton            : true,
+                        keydownListenerCapture      : true,
+                        allowOutsideClick           : true,
+                        allowEscapeKey              : true,
+                        didOpen                     : function() {
+                            dataCollection.env.sounds.swalSound.play();
+                        }
+                    }).then((result) => {
+                        if (result.value) {
+                            var cancelUrl =
+                                dataCollection.env.httpScheme + '://' +
+                                dataCollection.env.httpHost + '/' +
+                                dataCollection.env.appRoute + '/system/progress/cancelProgress';
+
+                            var postData = { };
+                            postData[$('#security-token').attr('name')] = $('#security-token').val();
+
+                            if (progressFile) {
+                                postData['file_name'] = progressFile;
+                            }
+
+                            $.post(cancelUrl, postData, function(response) {
+                                if (response.responseCode == 0) {
+                                    paginatedPNotify('success', {
+                                        'title' : response.responseMessage
+                                    });
+
+                                    resetProgressCounter();
+                                } else {
+                                    paginatedPNotify('error', {
+                                        'title' : response.responseMessage
+                                    });
+                                }
+                            }, 'json');
+                        }
+                    });
+                }
+            });
         }
     }
 
@@ -12007,6 +12061,11 @@ var BazProgress = function() {
 
                 if (responseData['pid']) {
                     $('#' + $(element)[0].id + '-cancel').attr('hidden', false);
+                    pid = responseData['pid'];
+                }
+
+                if (responseData['progressFile']) {
+                    progressFile = responseData['progressFile'];
                 }
 
                 if (responseData['preCheckComplete'] == false ||
@@ -12044,6 +12103,14 @@ var BazProgress = function() {
 
                                     $('.' + $(element)[0].id + '-remote-bar').css('width', responseData['percentComplete'] + '%');
                                     $('.' + $(element)[0].id + '-remote-bar').attr('aria-valuenow', responseData['percentComplete']);
+
+                                    if ($('.' + $(element)[0].id + '-progress-span').html() === '') {
+                                        $('.' + $(element)[0].id + '-progress-span')
+                                            .html(responseData['runners']['running']['text'] + ' (' + responseData['totalPercentComplete'] + '%)');
+
+                                        $('.' + $(element)[0].id + '-bar').css('width', responseData['totalPercentComplete'] + '%');
+                                        $('.' + $(element)[0].id + '-bar').attr('aria-valuenow', responseData['totalPercentComplete']);
+                                    }
                                 } else {
                                     $('.progress-remote, .remote-progress-span').attr('hidden', true);
 
@@ -12078,6 +12145,14 @@ var BazProgress = function() {
 
                                         $('.' + $(element)[0].id + '-remote-bar').css('width', responseData['percentComplete'] + '%');
                                         $('.' + $(element)[0].id + '-remote-bar').attr('aria-valuenow', responseData['percentComplete']);
+
+                                        if ($('.' + $(element)[0].id + '-progress-span').html() === '') {
+                                            $('.' + $(element)[0].id + '-progress-span')
+                                                .html(responseData['runners']['running']['text'] + ' (' + responseData['totalPercentComplete'] + '%)');
+
+                                            $('.' + $(element)[0].id + '-bar').css('width', responseData['totalPercentComplete'] + '%');
+                                            $('.' + $(element)[0].id + '-bar').attr('aria-valuenow', responseData['totalPercentComplete']);
+                                        }
                                     } else {
                                         $('.' + $(element)[0].id + '-remote-bar').css('width', '0%');
                                         $('.' + $(element)[0].id + '-remote-bar').attr('aria-valuenow', 0);
@@ -12087,10 +12162,10 @@ var BazProgress = function() {
                                     $('.progress-remote, .remote-progress-span').attr('hidden', true);
 
                                     $('.' + $(element)[0].id + '-progress-span')
-                                        .html(responseData['runners']['running']['text'] + ' (' + responseData['percentComplete'] + '%)');
+                                        .html(responseData['runners']['running']['text'] + ' (' + responseData['totalPercentComplete'] + '%)');
 
-                                    $('.' + $(element)[0].id + '-bar').css('width', responseData['percentComplete'] + '%');
-                                    $('.' + $(element)[0].id + '-bar').attr('aria-valuenow', responseData['percentComplete']);
+                                    $('.' + $(element)[0].id + '-bar').css('width', responseData['totalPercentComplete'] + '%');
+                                    $('.' + $(element)[0].id + '-bar').attr('aria-valuenow', responseData['totalPercentComplete']);
                                 }
                             }
                         } else {
@@ -12147,6 +12222,8 @@ var BazProgress = function() {
                             isUpload = false;
                             isDownload = false;
                             isSteps = false;
+                            pid = 0;
+                            progressFile = null;
                             $('.' + $(element)[0].id + '-child-bar').css('width', '0%');
                             $('.' + $(element)[0].id + '-child-bar').attr('aria-valuenow', 0);
                             switchProgressBarColor('.' + $(element)[0].id + '-child-bar', 'info');
@@ -12154,6 +12231,7 @@ var BazProgress = function() {
                             $('.' + $(element)[0].id + '-remote-bar').attr('aria-valuenow', 0);
                             switchProgressBarColor('.' + $(element)[0].id + '-remote-bar', 'info');
                             $('.progress-remote, .remote-progress-span').attr('hidden', true);
+                            $('#' + $(element)[0].id + '-cancel').attr('hidden', true);
                             $('body').trigger('bazProgressComplete');
                         }
                     } else {
@@ -12252,6 +12330,8 @@ var BazProgress = function() {
         isUpload = false;
         isDownload = false;
         isSteps = false;
+        pid = 0;
+        progressFile = null;
         $('body').trigger({'type':'bazProgressComplete', 'reset' : true});
     }
 
@@ -12295,6 +12375,9 @@ var BazProgress = function() {
         }
         BazProgress.switchProgressBarColor = function(el, color) {
             switchProgressBarColor(el, color);
+        }
+        BazProgress.resetProgressCounter = function() {
+            resetProgressCounter();
         }
         BazProgress.setCallable = function(callable) {
             setCallable(callable);
