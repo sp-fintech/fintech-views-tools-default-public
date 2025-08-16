@@ -42566,6 +42566,10 @@ a.disabled {
   width: 100%;
 }
 
+.flatpickr-calendar.static.open {
+  z-index: 9999;
+}
+
 .swal2-popup {
   width: auto !important;
   max-width: none !important;
