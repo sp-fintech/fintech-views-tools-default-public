@@ -559,8 +559,6 @@ var BazCore = function() {
             BazTunnels.init();
         }
         $('#body').on('bazContentLoaderAjaxComplete', function() {
-            //eslint-disable-next-line
-            console.log(dataCollection.env.wsTunnels.pusher._websocket_connected);
             if (dataCollection.env.wsTunnels.pusher._websocket_connected !== 'undefined' &&
                 dataCollection.env.wsTunnels.pusher._websocket_connected === false
             ) {
